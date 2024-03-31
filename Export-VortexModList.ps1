@@ -57,7 +57,7 @@
     The result is a list of mods for the game Baldur's Gate III with only the columns modName, id, author,
     modVersion, state, loadOrderNumber and enabled. The result is sorted by the load order and formatted as a table
 .EXAMPLE
-    .\Export-VortexModlist | Where-Object gameName -eq baldursgate3 | Select-Object modName, modVersion, `
+    Export-VortexModlist | Where-Object gameName -eq baldursgate3 | Select-Object modName, modVersion, `
     newestVersion, author, source, enabled, shortDescription | ConvertTo-Markdown `
     -Title "Baldur's Gate 3 mods" -AsTable | Set-Clipboard
 
