@@ -1,37 +1,39 @@
+<#PSScriptInfo
+.VERSION 1.0.0
+.GUID 4609f00c-e850-4d3f-9c69-3741e56e4133
+.AUTHOR detlefs@gmail.com
+.COMPANYNAME
+.COPYRIGHT © 2024 detlefs@gmail.com
+.TAGS
+.LICENSEURI
+.PROJECTURI https://github.com/detlefs/Export-VertexModList
+.ICONURI
+.EXTERNALMODULEDEPENDENCIES 
+.REQUIREDSCRIPTS
+.EXTERNALSCRIPTDEPENDENCIES
+.RELEASENOTES
+.PRIVATEDATA
+#>
+
 <#
 .SYNOPSIS
     This script reads the mods of last active profiles from the latest Vortex backup.json and provides them as a custom object array.
-.DESCRIPTION
+.DESCRIPTION 
     This script reads the mods of the last active profiles from the latest Vortex backup.json and provides them as a custom object array.
     The result can then easily be processed by other powershell command to filter, format or convert it. The plain result is not very
     useful. It's meant to be further processed by other PowerShell commands, like Select-Object, Format-Table, Where-Object, Sort-Object, etc.
 
     Note: Mods with a status of "Uninstalled" in Vortex are not included in the list.
-
-    The custom object array provides the following attributes:
-    gameName            - The name of the game
-    gameId              - The ID of the game
-    id                  - The ID of the mod
-    author              - The author name of the mod
-    description         - The long description of tghe mod. In many cases, this field contains HTML markup
-    homepage            - The homepage URL of the mod
-    modName             - The mod name of the mod
-    modVersion          - The version number of the mod
-    name                - The name of the mod
-    newestVersion       - The version number of the newest version of the mod
-    pictureUrl          - The picture URL of the mod
-    shortDescription    - The short descricption of the mod
-    source              - The source (origin) of the mode
-    state               - The state of the mode. Can only be "installed"
-    loadOrderNumber     - The numeric value specifying the load order in Vortex
-    enabled             - Whether the mod is enabled or disabled
-
-.NOTES
-    As Vortex updates the used backup file ($($env:APPDATA)\Vortex\temp\state_backups_full\startup.json) during
+    
+    Note: As Vortex updates the used backup file ($($env:APPDATA)\Vortex\temp\state_backups_full\startup.json) during
     a new start of the tool, it's best to use Export-VortexModList right after starting Vortex. If settings are
     changed in Vortex, it's necessary to restart it to update the backup file.
+
+    The available properties can be listed by calling:
+    Export-VortexModList | Get-Member
+
 .LINK
-    Specify a URI to a help page, this will show when Get-Help -Online is used.
+    https://github.com/detlefs/Export-VertexModList/blob/master/README.md
 .EXAMPLE
     Export-VortexModList
 
