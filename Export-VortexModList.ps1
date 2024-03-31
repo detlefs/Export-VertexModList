@@ -48,7 +48,7 @@
     Reads all data from the Vortex backup and the result is piped to Select-Object.
     The result is a list of the games.
 .EXAMPLE
-    .\Export-VortexModlist | Where-Object gameName -eq baldursgate3 | Select-Object modName, id, `
+    Export-VortexModlist | Where-Object gameName -eq baldursgate3 | Select-Object modName, id, `
     author, modVersion, state, loadOrderNumber, enabled | Sort-Object loadOrderNumber | `
     Format-Table -AutoSize
 
@@ -70,10 +70,11 @@
 
 [CmdletBinding()]
 
+# Parameters: Currently there are none.
 Param(
 )
 
-# Class for games
+# Class for games. Holds data read about the games in the backup.
 class GameData {
     [string]$name
     [string]$id
@@ -84,7 +85,7 @@ class GameData {
     }
 }
 
-# Class for mod data
+# Class for mod data. Holds data about the mods and games
 class ModData
 {
     [string]$gameName
@@ -125,24 +126,24 @@ class ModData
     }
 }
 
-# variable
+# Globval variables
 $vortexBackupJsonPath = "$($env:APPDATA)\Vortex\temp\state_backups_full\startup.json"
 $game = @()
 $mod = @()
 
-# Read the latest backup JSON
+# Read the latest backup JSON. Note, this is the default location of the Vortex backup file.
 $vortexBackupJson = Get-Content -Path $vortexBackupJsonPath | ConvertFrom-Json
 
-# Get the last active games
+# Get the last active games from the backup and add it to the $game array.
 $lastActiveProfile = $vortexBackupJson.settings.profiles.lastActiveProfile
 foreach ($key in $lastActiveProfile.PSObject.Properties.Name) {
-    #Write-Host "Name: $key, Value $($lastActiveProfile.$key)"
     $game += [GameData]::new($key, $($lastActiveProfile.$key))
 }
 
-# Get the mods for each game
+# Get the mods for each game from the backup and add details to the $mod array
 foreach ($g in $game) {
     $modList = $vortexBackupJson.persistent.mods.$($g.name)
+
     foreach ($modKey in $modList.PSObject.Properties.Name) {
         $m = $vortexBackupJson.persistent.mods.$($g.name).$($modKey)
         $enabledState = $vortexBackupJson.persistent.profiles.$($g.id).modState.$modKey.enabled
@@ -155,4 +156,5 @@ foreach ($g in $game) {
     }
 }
 
+# Return the $mod array
 $mod
