@@ -1,43 +1,26 @@
-<#PSScriptInfo
-.VERSION 1.0.0
-.GUID 4609f00c-e850-4d3f-9c69-3741e56e4133
-.AUTHOR detlefs@gmail.com
-.COMPANYNAME
-.COPYRIGHT © 2024 detlefs@gmail.com
-.TAGS
-.LICENSEURI
-.PROJECTURI https://github.com/detlefs/Export-VertexModList
-.ICONURI
-.EXTERNALMODULEDEPENDENCIES 
-.REQUIREDSCRIPTS
-.EXTERNALSCRIPTDEPENDENCIES
-.RELEASENOTES
-.PRIVATEDATA
-#>
-
 <#
 .SYNOPSIS
-    This script reads the mods of last active profiles from the latest Vortex backup.json and provides them as a custom object array.
+    This script reads the list of mods from the Vortex backup.json and provides them as a object array.
 .DESCRIPTION 
-    This script reads the mods of the last active profiles from the latest Vortex backup.json and provides them as a custom object array.
-    The result can then easily be processed by other powershell command to filter, format or convert it. The plain result is not very
-    useful. It's meant to be further processed by other PowerShell commands, like Select-Object, Format-Table, Where-Object, Sort-Object, etc.
+    This script reads the mods from the latest Vortex backup.json and provides them as a object array.
+    The result can then easily be processed by other powershell command to filter, format or convert it. The
+    core result is not very useful by itself. It's meant to be further processed by other PowerShell commands.
 
     Note: Mods with a status of "Uninstalled" in Vortex are not included in the list.
     
-    Note: As Vortex updates the used backup file ($($env:APPDATA)\Vortex\temp\state_backups_full\startup.json) during
-    a new start of the tool, it's best to use Export-VortexModList right after starting Vortex. If settings are
-    changed in Vortex, it's necessary to restart it to update the backup file.
+    Note: The script reads the data from the newer file in ($($env:APPDATA)\Vortex\temp\state_backups_full\*.json).
+    Neither of these files is updated real-time by Vortex. So, if you change something in the mod settings, it's
+    best to restart Vortex if you want to see the change in this script.
 
-    The available properties can be listed by calling:
+    The available properties returned by the script can be listed by calling:
     Export-VortexModList | Get-Member
 
 .LINK
-    https://github.com/detlefs/Export-VertexModList/blob/master/README.md
+    https://github.com/detlefs/Export-VertexModList
 .EXAMPLE
     Export-VortexModList
 
-    Reads all data from the Vortex backup file and returns a custom object array.
+    Reads all data from the Vortex backup file and returns an object array of type ModData.
 .EXAMPLE
     Export-VortexModList | Where-Object gameName -eq baldursgate3
 
@@ -49,25 +32,6 @@
 
     Reads all data from the Vortex backup and the result is piped to Select-Object.
     The result is a list of the games.
-.EXAMPLE
-    Export-VortexModlist | Where-Object gameName -eq baldursgate3 | Select-Object modName, id, `
-    author, modVersion, state, loadOrderNumber, enabled | Sort-Object loadOrderNumber | `
-    Format-Table -AutoSize
-
-    Reads all data from the Vortex backup and the result is piped to Where-Object, then to Select-Object,
-    then to Sort-Object and finally to Format-Table.
-    The result is a list of mods for the game Baldur's Gate III with only the columns modName, id, author,
-    modVersion, state, loadOrderNumber and enabled. The result is sorted by the load order and formatted as a table
-.EXAMPLE
-    Export-VortexModlist | Where-Object gameName -eq baldursgate3 | Select-Object modName, modVersion, `
-    newestVersion, author, source, enabled, shortDescription | ConvertTo-Markdown `
-    -Title "Baldur's Gate 3 mods" -AsTable | Set-Clipboard
-
-    This example creates a tabe view in markdown syntax that can be easily pasted into any markdown-aware software
-    like a Wiki website, or a notes app like Anytype, Notion or Joplyn, etc.
-
-    Note: The ConvertTo-Markdown command belongs to a module Utility.PS that can be found
-    here: https://www.powershellgallery.com/packages/Utility.PS/2.0.1
 #>
 
 [CmdletBinding()]
@@ -129,17 +93,30 @@ class ModData
 }
 
 # Globval variables
-$vortexBackupJsonPath = "$($env:APPDATA)\Vortex\temp\state_backups_full\startup.json"
+$vortexBackupJsonPath = "$($env:APPDATA)\Vortex\temp\state_backups_full\*.json"
 $game = @()
 $mod = @()
 
-# Read the latest backup JSON. Note, this is the default location of the Vortex backup file.
-$vortexBackupJson = Get-Content -Path $vortexBackupJsonPath | ConvertFrom-Json
+# Read the latest backup JSON from the default location of the Vortex backup files.
+try {
+    $latest = Get-ChildItem -Path $vortexBackupJsonPath | Sort-Object LastAccessTime -Descending | Select-Object -First 1
+    $vortexBackupJson = Get-Content -Path $latest | ConvertFrom-Json
+}
+catch {
+    "Could not read the vortex backup file: $_"
+    return
+}
 
 # Get the last active games from the backup and add it to the $game array.
 $lastActiveProfile = $vortexBackupJson.settings.profiles.lastActiveProfile
+
 foreach ($key in $lastActiveProfile.PSObject.Properties.Name) {
     $game += [GameData]::new($key, $($lastActiveProfile.$key))
+}
+
+if ($game.count -lt 1) {
+    Write-Host "No games found!" -ForegroundColor Yellow
+    return
 }
 
 # Get the mods for each game from the backup and add details to the $mod array
